@@ -1,0 +1,2 @@
+drink:beverage
+unique:exclusive,rare
