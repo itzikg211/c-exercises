@@ -6,6 +6,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#define MAX_WORD_LEN 16
 #define SUCCESS	0
 #define WRONG_NUM_ARG -1
 #define ERR_OPENING -2

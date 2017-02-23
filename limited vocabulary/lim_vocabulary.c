@@ -3,54 +3,41 @@
 voc* file2voc(FILE* f_voc){
 	voc* voc_from_file = malloc(1*sizeof(voc));
 	words* keys = malloc(1*sizeof(words));
+	char buffer[MAX_WORD_LEN];
 	int num_keys = 0;
 	int len = 0;
 	int i;
 	int c;
 	while(EOF != (c = fgetc(f_voc))){
-		/*calculating the length of the key word*/
+		/*saving the key word in the buffer*/
 		while(c != ':'){
+			buffer[len] = c;			
 			++len;
-			c = fgetc(f_voc);	
-		}
-		keys = realloc(keys,(num_keys + 1)*sizeof(words));
-		keys[num_keys].w = (char*)malloc(len+1);
-		/*going back 'len' chars so we can save the word*/
-		fseek(f_voc,-(len+1),SEEK_CUR);
-		/*saving the key word*/
-		for(i=0;i<len;++i){
 			c = fgetc(f_voc);
-			keys[num_keys].w[i] = tolower(c);
 		}
-		/*inserting NULL termination char*/
-		keys[num_keys].w[len] = 0;
-		/*reading ':' character*/
-		c = fgetc(f_voc);
+		buffer[len] = 0;
+		keys = realloc(keys,(num_keys + 1)*sizeof(words));
+		keys[num_keys].w = (char*)malloc(strlen(buffer));
+		/*copying the buffer to the word array*/
+		strcpy(keys[num_keys].w,buffer);
+		
 		keys[num_keys].num_trans = 0;
 		keys[num_keys].translations = (char**)malloc(sizeof(char*));
 		/*scanning the chars of the translation words*/
 		while(EOF != (c = fgetc(f_voc))){
-			len = 1;
+			len = 0;
 			++keys[num_keys].num_trans;
 			keys[num_keys].translations = (char**)realloc(keys[num_keys].translations,keys[num_keys].num_trans*sizeof(char*));
-			/*calculating the length of the alternative word*/
+			/*saving the alternative word in the buffer*/
 			while(c != '\n' && c != ','){
+				buffer[len] = c;
 				++len;
 				c = fgetc(f_voc);	
 			}
-			
-			keys[num_keys].translations[keys[num_keys].num_trans - 1] = (char*)malloc(len);
-			/*going back 'len' chars so we can save the translation word*/
-			fseek(f_voc,-len,SEEK_CUR);
-			/*stroing the translation in the right place*/
-			for(i=0;i<len;++i){
-				if(',' != (c = fgetc(f_voc)) && c != '\n'){
-					keys[num_keys].translations[keys[num_keys].num_trans - 1][i] = tolower(c);
-				}
-			}
-			/*inserting NULL termination char*/
-			keys[num_keys].translations[keys[num_keys].num_trans - 1][len] = 0;
-			/*check if finished going through translations and can go to the next word*/
+			buffer[len] = 0;
+			keys[num_keys].translations[keys[num_keys].num_trans - 1] = (char*)malloc(strlen(buffer)+1);
+			/*copying the buffer to the translations array*/
+			strncpy(keys[num_keys].translations[keys[num_keys].num_trans - 1],buffer,strlen(buffer));
 			if('\n' == c){
 				break;			
 			}
@@ -107,6 +94,7 @@ int updatef(char* fname,voc* v)
 	int c;
 	int i;
 	int len=0;
+	char buffer[MAX_WORD_LEN];
 	/*the word we write to the file*/
 	char* wr;
 	/*opening files*/
@@ -123,8 +111,9 @@ int updatef(char* fname,voc* v)
 		return ERR_OPENING;
 	}
 	while(EOF != (c = fgetc(fr))){
-	/*calculating the length of the word*/
+		/*saving the word in the buffer*/
 		while(c != '\n' && c != ' ' && c !='.' && c !=',' && c != EOF){
+			buffer[len] = c;
 			++len;
 			c = fgetc(fr);
 		}
@@ -133,20 +122,14 @@ int updatef(char* fname,voc* v)
 			fputc(c,temp);
 			continue;
 		}
-		wr = (char*)malloc(len+1);
-		/*going back 'len' chars so we can save the word*/
-		fseek(fr,-(len+1),SEEK_CUR);
-		/*saving the chars of the word*/
-		for(i=0;i<len;++i){
-			c = fgetc(fr);
-			wr[i] = c;
-		}
-		wr[len] = 0;
-		/*storing the word in the temporary file after checking if there is a translation*/
+		buffer[len] = 0;
+		wr = (char*)malloc(strlen(buffer)+1);
+		/*copy the buffer to string 'wr'*/
+		strcpy(wr,buffer);
+		/*store the word in the file, but first check if there is a translation word*/
 		fputs(check_word(v,wr),temp);
 		free(wr);
-		/*reading one more character('\n','.',',',' ')*/
-		c = fgetc(fr);
+		/*saving one more character('\n','.',',',' ')*/
 		fputc(c,temp);
 		len = 0;
 	}
